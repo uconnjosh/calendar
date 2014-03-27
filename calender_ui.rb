@@ -45,32 +45,49 @@ def list_calendars
 end
 
 #FIX THIS ----- how doesnt work
-def list_events(calendar, how)
+def list_events(calendar, how, month_to_view=false)
   puts " Here are your events...(#{how})"
-  events = Event.where(calender_id: calendar.id)
-
-  case how
-  when "by_date"
-    #sort
-  when "today"
-  when "week"
-  when "month"
-  end
+  events = Event.where(calender_id: calendar.id).order('start_time')
   events.each_with_index do |event, index|
-    puts " #{index+1}. #{event.name}"
+    begin
+      case how
+      when "today"
+        if DateTime.now.to_date == event.start_time.to_date
+          puts " #{index+1}. #{event.name}"
+        end
+      when "week"
+        if DateTime.now.to_date <= event.start_time.to_date && event.start_time.to_date <= DateTime.now.to_date + 7.days
+          puts " #{index+1}. #{event.name}"
+        end
+      when "month"
+        if month_to_view
+          if month_to_view == event.start_time.to_s[5..6]
+            puts " #{index+1}. #{event.name}"
+          end
+        else
+          if DateTime.now.to_s[5..6] == event.start_time.to_s[5..6]
+            puts " #{index+1}. #{event.name}"
+          end
+        end
+      else
+        puts " #{index+1}. #{event.name}"
+      end
+    rescue
+      error
+    end
   end
 end
 #__________________
-def enter_calendar(calendar, how="by_date")
+def enter_calendar(calendar, how="by_date", month_to_view=false)
   clear
   puts " #{calendar.name} "
-  list_events(calendar, how)
+  list_events(calendar, how, month_to_view)
   puts " " +  "*"*23
   puts " 'add [eventName]' - to create a event"
   puts " 'enter [eventName]' - to enter a event"
   puts " 'delete [eventName]' - to delete a event"
   puts " 'view [how]' - to sort events by..."
-  puts " 'how: by_date, today, week, month"
+  puts " 'how: by_date, today, week, month, month 12"
   puts " 'exit' - to exit the app"
   puts " " +  "*"*23
   print "►"
@@ -87,10 +104,14 @@ def enter_calendar(calendar, how="by_date")
     input.shift
     event = Event.find_by(name: input.join(" "))
     event.destroy
+  when "view"
+    input.shift
+    how = input[0]
+    month_to_view = input[1]
   when "exit"
     exit
   end
-  enter_calendar(calendar, how)
+  enter_calendar(calendar, how, month_to_view)
 end
 
 def add_event(name, calendar)
